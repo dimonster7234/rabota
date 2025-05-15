@@ -1,263 +1,256 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Опросник Онлайн</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            color: #333;
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Супер-Опросник</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Comic Sans MS', sans-serif;
+      background: linear-gradient(-45deg, #ff6ec4, #7873f5, #4adede, #ffb347);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      color: white;
+      overflow-x: hidden;
+    }
 
-        @keyframes gradientBG {
-            0% {background-position: 0% 50%;}
-            50% {background-position: 100% 50%;}
-            100% {background-position: 0% 50%;}
-        }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
-        header {
-            background-color: rgba(0,0,0,0.6);
-            color: white;
-            padding: 20px 0;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        h2 {
-            color: #4A90E2;
-        }
-        .hidden {
-            display: none;
-        }
-        input[type="text"], input[type="password"], textarea {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #4A90E2;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #357ABD;
-        }
-        .question-block {
-            margin-bottom: 20px;
-        }
-        label {
-            font-weight: bold;
-        }
-    </style>
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: auto;
+      padding: 2rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    }
+
+    .button {
+      background-color: #ffcc00;
+      color: black;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+
+    .button:hover {
+      background-color: #ffaa00;
+    }
+
+    .input, .textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      border: none;
+      margin-bottom: 1rem;
+      font-family: inherit;
+    }
+
+    .particles {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.3);
+      animation: float 10s infinite ease-in-out;
+    }
+
+    @keyframes float {
+      0%   { transform: translateY(0); }
+      50%  { transform: translateY(-30px); }
+      100% { transform: translateY(0); }
+    }
+
+    .question-block { margin-bottom: 1rem; }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Платформа для Онлайн-Опросов</h1>
-    </header>
-    <div class="container">
-        <div id="authContainer">
-            <h2>Вход</h2>
-            <input type="text" id="loginUsername" placeholder="Логин">
-            <input type="password" id="loginPassword" placeholder="Пароль">
-            <button onclick="login()">Войти</button>
-            <p>Нет аккаунта? <a href="#" onclick="showRegister()">Регистрация</a></p>
-        </div>
-
-        <div id="registerContainer" class="hidden">
-            <h2>Регистрация</h2>
-            <input type="text" id="registerUsername" placeholder="Логин">
-            <input type="password" id="registerPassword" placeholder="Пароль">
-            <button onclick="register()">Зарегистрироваться</button>
-            <p>Есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
-        </div>
-
-        <div id="surveyContainer" class="hidden">
-            <h2>Опросы</h2>
-            <div id="surveyList"></div>
-            <div id="takeSurveyContainer" class="hidden">
-                <form id="takeSurveyForm"></form>
-                <div id="thankYouMessage" class="hidden">Спасибо за участие!</div>
-            </div>
-        </div>
-
-        <div id="adminPanel" class="hidden">
-            <h2>Админ-панель</h2>
-            <input type="text" id="newQuestion" placeholder="Введите вопрос">
-            <textarea id="newOptions" placeholder="Варианты ответа (по одному в строке)"></textarea>
-            <select id="newType">
-                <option value="single">Один вариант</option>
-                <option value="multiple">Несколько вариантов</option>
-            </select>
-            <button onclick="addQuestion()">Добавить вопрос</button>
-            <div id="adminQuestions"></div>
-            <button onclick="logout()">Выйти</button>
-        </div>
+  <div class="particles" id="particles"></div>
+  <div class="container">
+    <div class="card">
+      <h1>Супер-Опросник</h1>
+      <div id="app"></div>
     </div>
+  </div>
 
-    <script>
-        if (!localStorage.getItem('users')) {
-            localStorage.setItem('users', JSON.stringify([{username: 'admin', password: 'admin123', role: 'admin'}]));
-        }
+  <script>
+    const app = document.getElementById("app");
 
-        if (!localStorage.getItem('questions')) {
-            localStorage.setItem('questions', JSON.stringify([]));
-        }
+    const state = {
+      page: 'auth',
+      user: null,
+      users: JSON.parse(localStorage.getItem("users") || '{}'),
+      surveys: JSON.parse(localStorage.getItem("surveys") || "[]"),
+      answers: {},
+      currentSurvey: null,
+      editingSurveyIndex: null
+    };
 
-        let currentUser = null;
+    function saveState() {
+      localStorage.setItem("users", JSON.stringify(state.users));
+      localStorage.setItem("surveys", JSON.stringify(state.surveys));
+    }
 
-        function showRegister() {
-            document.getElementById('authContainer').classList.add('hidden');
-            document.getElementById('registerContainer').classList.remove('hidden');
-        }
+    function renderAuthPage() {
+      app.innerHTML = `
+        <h3>Регистрация</h3>
+        <input class="input" id="regLogin" placeholder="Логин" />
+        <input class="input" type="password" id="regPass" placeholder="Пароль" />
+        <button class="button" onclick="register()">Зарегистрироваться</button>
+        <hr/>
+        <h3>Вход</h3>
+        <input class="input" id="login" placeholder="Логин" />
+        <input class="input" type="password" id="password" placeholder="Пароль" />
+        <button class="button" onclick="login()">Войти</button>
+      `;
+    }
 
-        function showLogin() {
-            document.getElementById('registerContainer').classList.add('hidden');
-            document.getElementById('authContainer').classList.remove('hidden');
-        }
+    function register() {
+      const login = document.getElementById("regLogin").value;
+      const password = document.getElementById("regPass").value;
+      if (!login || !password) return alert("Введите логин и пароль");
+      if (state.users[login]) return alert("Пользователь уже существует");
+      state.users[login] = { password, role: login === 'admin' ? 'admin' : 'user' };
+      saveState();
+      alert("Регистрация успешна. Теперь войдите.");
+    }
 
-        function login() {
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-            const users = JSON.parse(localStorage.getItem('users'));
-            const user = users.find(u => u.username === username && u.password === password);
-            if (user) {
-                currentUser = user;
-                if (user.role === 'admin') showAdminPanel();
-                else showSurvey();
-            } else {
-                alert('Неверный логин или пароль');
-            }
-        }
+    function login() {
+      const login = document.getElementById("login").value;
+      const password = document.getElementById("password").value;
+      if (state.users[login] && state.users[login].password === password) {
+        state.user = login;
+        state.page = "home";
+        render();
+      } else {
+        alert("Неверные данные");
+      }
+    }
 
-        function register() {
-            const username = document.getElementById('registerUsername').value;
-            const password = document.getElementById('registerPassword').value;
-            if (!username || !password) return alert('Заполните все поля');
-            const users = JSON.parse(localStorage.getItem('users'));
-            if (users.find(u => u.username === username)) return alert('Пользователь уже существует');
-            users.push({username, password, role: 'user'});
-            localStorage.setItem('users', JSON.stringify(users));
-            alert('Регистрация успешна!');
-            showLogin();
-        }
+    function logout() {
+      state.user = null;
+      state.page = 'auth';
+      render();
+    }
 
-        function showSurvey() {
-            document.getElementById('authContainer').classList.add('hidden');
-            document.getElementById('surveyContainer').classList.remove('hidden');
-            renderSurveyList();
-        }
+    function renderHome() {
+      const role = state.users[state.user].role;
+      let html = `<p>Добро пожаловать, ${state.user}! <button class='button' onclick='logout()'>Выйти</button></p>`;
+      if (role === "admin") {
+        html += `<button class="button" onclick="renderSurveyEditor()">Создать опрос</button>`;
+      }
+      state.surveys.forEach((s, i) => {
+        html += `<div class='card'>
+          <h2 onclick="startSurvey(${i})">${s.title}</h2>
+          ${role === "admin" ? `<button class='button' onclick="editSurvey(${i})">Редактировать</button><button class='button' onclick="deleteSurvey(${i})">Удалить</button>` : ""}
+        </div>`;
+      });
+      app.innerHTML = html;
+    }
 
-        function renderSurveyList() {
-            const questions = JSON.parse(localStorage.getItem('questions'));
-            const surveyList = document.getElementById('surveyList');
-            surveyList.innerHTML = '';
-            questions.forEach((q, i) => {
-                const div = document.createElement('div');
-                div.className = 'question-block';
-                div.innerHTML = `<strong>${q.text}</strong><br><button onclick="takeSurvey(${i})">Ответить</button>`;
-                surveyList.appendChild(div);
-            });
-        }
+    function startSurvey(index) {
+      state.currentSurvey = state.surveys[index];
+      state.page = "survey";
+      state.answers = {};
+      render();
+    }
 
-        function takeSurvey(index) {
-            const questions = JSON.parse(localStorage.getItem('questions'));
-            const form = document.getElementById('takeSurveyForm');
-            form.innerHTML = '';
-            const q = questions[index];
-            const title = document.createElement('h3');
-            title.textContent = q.text;
-            form.appendChild(title);
-            q.options.forEach((opt, i) => {
-                const label = document.createElement('label');
-                label.innerHTML = `<input type="${q.type === 'multiple' ? 'checkbox' : 'radio'}" name="answer" value="${opt}"> ${opt}<br>`;
-                form.appendChild(label);
-            });
-            const submit = document.createElement('button');
-            submit.textContent = 'Отправить';
-            submit.type = 'submit';
-            form.appendChild(submit);
-            form.onsubmit = function(e) {
-                e.preventDefault();
-                form.classList.add('hidden');
-                document.getElementById('thankYouMessage').classList.remove('hidden');
-            };
-            document.getElementById('takeSurveyContainer').classList.remove('hidden');
-        }
+    function renderSurvey() {
+      let html = `<h2>${state.currentSurvey.title}</h2>`;
+      state.currentSurvey.questions.forEach((q, i) => {
+        html += `<div class='question-block'><p>${q}</p><textarea class="textarea" onchange="state.answers[${i}] = this.value"></textarea></div>`;
+      });
+      html += `<button class="button" onclick="submitSurvey()">Отправить</button>`;
+      app.innerHTML = html;
+    }
 
-        function showAdminPanel() {
-            document.getElementById('authContainer').classList.add('hidden');
-            document.getElementById('adminPanel').classList.remove('hidden');
-            renderAdminQuestions();
-        }
+    function submitSurvey() {
+      alert("Спасибо за участие!");
+      state.page = "home";
+      render();
+    }
 
-        function renderAdminQuestions() {
-            const questions = JSON.parse(localStorage.getItem('questions'));
-            const adminArea = document.getElementById('adminQuestions');
-            adminArea.innerHTML = '';
-            questions.forEach((q, i) => {
-                const div = document.createElement('div');
-                div.innerHTML = `<strong>${q.text}</strong><br>Тип: ${q.type}, Варианты: ${q.options.join(', ')}<br>
-                    <button onclick="editQuestion(${i})">Редактировать</button> 
-                    <button onclick="deleteQuestion(${i})">Удалить</button><hr>`;
-                adminArea.appendChild(div);
-            });
-        }
+    function deleteSurvey(index) {
+      if (confirm("Удалить опрос?")) {
+        state.surveys.splice(index, 1);
+        saveState();
+        render();
+      }
+    }
 
-        function addQuestion() {
-            const text = document.getElementById('newQuestion').value;
-            const optionsRaw = document.getElementById('newOptions').value;
-            const type = document.getElementById('newType').value;
-            const options = optionsRaw.split('\n').map(s => s.trim()).filter(s => s);
-            if (!text || options.length === 0) return alert('Заполните вопрос и хотя бы один вариант');
-            const questions = JSON.parse(localStorage.getItem('questions'));
-            questions.push({text, options, type});
-            localStorage.setItem('questions', JSON.stringify(questions));
-            renderAdminQuestions();
-        }
+    function editSurvey(index) {
+      state.editingSurveyIndex = index;
+      renderSurveyEditor(state.surveys[index]);
+    }
 
-        function editQuestion(index) {
-            const questions = JSON.parse(localStorage.getItem('questions'));
-            const q = questions[index];
-            const newText = prompt('Измените текст вопроса:', q.text);
-            const newOpts = prompt('Измените варианты (через \n):', q.options.join('\n'));
-            const newType = prompt('Тип (single/multiple):', q.type);
-            if (newText && newOpts && newType) {
-                questions[index] = {text: newText, options: newOpts.split('\n').map(x => x.trim()), type: newType};
-                localStorage.setItem('questions', JSON.stringify(questions));
-                renderAdminQuestions();
-            }
-        }
+    function renderSurveyEditor(survey = null) {
+      const isEditing = !!survey;
+      const title = survey ? survey.title : "";
+      const questions = survey ? survey.questions.join("\n") : "";
+      app.innerHTML = `
+        <h3>${isEditing ? 'Редактировать' : 'Создать'} опрос</h3>
+        <input class="input" id="surveyTitle" placeholder="Название опроса" value="${title}" />
+        <textarea class="textarea" id="surveyQuestions" placeholder="Каждый вопрос с новой строки">${questions}</textarea>
+        <button class="button" onclick="saveSurvey(${isEditing})">Сохранить</button>
+        <button class="button" onclick="renderHome()">Отмена</button>
+      `;
+    }
 
-        function deleteQuestion(index) {
-            const questions = JSON.parse(localStorage.getItem('questions'));
-            questions.splice(index, 1);
-            localStorage.setItem('questions', JSON.stringify(questions));
-            renderAdminQuestions();
-        }
+    function saveSurvey(isEditing) {
+      const title = document.getElementById("surveyTitle").value.trim();
+      const questions = document.getElementById("surveyQuestions").value.trim().split("\n").map(q => q.trim()).filter(q => q);
+      if (!title || questions.length === 0) return alert("Введите заголовок и хотя бы один вопрос.");
+      const surveyData = { title, questions };
+      if (isEditing && state.editingSurveyIndex !== null) {
+        state.surveys[state.editingSurveyIndex] = surveyData;
+        state.editingSurveyIndex = null;
+      } else {
+        state.surveys.push(surveyData);
+      }
+      saveState();
+      renderHome();
+    }
 
-        function logout() {
-            location.reload();
-        }
-    </script>
+    function render() {
+      if (state.page === "auth") renderAuthPage();
+      else if (state.page === "home") renderHome();
+      else if (state.page === "survey") renderSurvey();
+    }
+
+    const particlesContainer = document.getElementById("particles");
+    for (let i = 0; i < 50; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      p.style.top = Math.random() * 100 + "%";
+      p.style.left = Math.random() * 100 + "%";
+      p.style.animationDuration = (10 + Math.random() * 10) + "s";
+      particlesContainer.appendChild(p);
+    }
+
+    render();
+  </script>
 </body>
 </html>
