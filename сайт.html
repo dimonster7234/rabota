@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FunPoll — Весёлая платформа опросов</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Fredoka One', cursive;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      background: linear-gradient(-45deg, #ffecd2, #fcb69f, #ff9a9e, #fad0c4, #c2e9fb, #d4fc79, #96e6a1);
+      background-size: 600% 600%;
+      animation: gradientBG 20s ease infinite;
+      transition: all 0.5s ease-in-out;
+    }
+
+    @keyframes gradientBG {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+
+    .fade {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+      background: #fff8f0dd;
+      border-radius: 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+    header {
+      background: #ff6f61;
+      color: white;
+      text-align: center;
+      padding: 30px 10px;
+      border-radius: 0 0 30px 30px;
+    }
+    button {
+      background: #ff9a76;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 15px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background-color: #ff7043;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 2px solid #ffbfa3;
+      border-radius: 10px;
+      font-family: inherit;
+    }
+    .hidden { display: none; }
+    .question-block {
+      margin-bottom: 20px;
+      background: #fff0e1;
+      padding: 15px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .score { font-weight: bold; color: green; }
+    .profile {
+      background: #ffe0cc;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+    /* Помощник */
+    #assistantModal {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #fff4e6;
+      padding: 15px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      max-width: 250px;
+      display: none;
+    }
+    #assistantModal img {
+      width: 50px;
+      vertical-align: middle;
+    }
+    #assistantModal p {
+      margin: 10px 0 0 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎉 FunPoll — Весёлая платформа опросов 🎉</h1>
+  </header>
+  <div class="container fade">
+    <div id="authSection">
+      <h2>🔐 Вход / Регистрация</h2>
+      <input type="text" id="username" placeholder="Имя пользователя">
+      <input type="password" id="password" placeholder="Пароль">
+      <div>
+        <button onclick="login()">Войти</button>
+        <button onclick="register()">Регистрация</button>
+        <button onclick="resetPassword()">Забыл пароль</button>
+      </div>
+    </div>
+
+    <div id="userSection" class="hidden fade">
+      <div class="profile">
+        <h2>👤 Личный кабинет: <span id="userDisplay"></span></h2>
+        <p>🏅 Баллы: <span id="userScore">0</span></p>
+        <button onclick="logout()">🚪 Выйти</button>
+        <button onclick="drawChart()">📊 Моя статистика</button>
+        <button onclick="changePassword()">🔐 Сменить пароль</button>
+        <button onclick="clearProgress()">🧹 Очистить прогресс</button>
+        <button onclick="showGreeting()">🎈 Поприветствовать</button>
+        <button onclick="toggleAssistant()">🤖 Помощник</button>
+      </div>
+      <div id="surveyList"></div>
+      <div id="surveyForm" class="hidden"></div>
+      <div id="resultChart" class="hidden">
+        <canvas id="resultsCanvas"></canvas>
+      </div>
+    </div>
+
+    <div id="adminSection" class="hidden fade">
+      <h2>🛠️ Админ-панель</h2>
+      <input id="qText" placeholder="Вопрос">
+      <textarea id="qOptions" placeholder="Варианты (по одному на строку)"></textarea>
+      <select id="qType">
+        <option value="single">Один вариант</option>
+        <option value="multiple">Несколько вариантов</option>
+      </select>
+      <button onclick="addSurveyQuestion()">➕ Добавить</button>
+      <button onclick="exportQuestions()">💾 Экспорт JSON</button>
+      <button onclick="clearAllQuestions()">🗑 Удалить все вопросы</button>
+      <button onclick="resetUsers()">⚠️ Сбросить пользователей</button>
+      <button onclick="alert(JSON.stringify(scoreBoard, null, 2))">📈 Показать всю статистику</button>
+      <input type="file" onchange="importQuestions(event)">
+      <div id="adminQuestions"></div>
+    </div>
+  </div>
+
+  <div id="assistantModal">
+    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712104.png" alt="Ассистент">
+    <p>Привет! Я помогу тебе пройти опрос. Нажимай кнопки и получай баллы!</p>
+  </div>
+
+  <script>
+    let users = JSON.parse(localStorage.getItem('users') || '[]');
+    let questions = JSON.parse(localStorage.getItem('questions') || '[]');
+    let currentUser = null;
+    let scoreBoard = JSON.parse(localStorage.getItem('scores') || '{}');
+
+    function saveData() {
+      localStorage.setItem('users', JSON.stringify(users));
+      localStorage.setItem('questions', JSON.stringify(questions));
+      localStorage.setItem('scores', JSON.stringify(scoreBoard));
+    }
+
+    function login() {
+      const u = document.getElementById('username').value;
+      const p = document.getElementById('password').value;
+      const user = users.find(x => x.username === u && x.password === p);
+      if (!user) return alert('Неверные данные');
+      currentUser = user;
+      document.getElementById('authSection').classList.add('hidden');
+      document.getElementById(user.role === 'admin' ? 'adminSection' : 'userSection').classList.remove('hidden');
+      document.getElementById('userDisplay').innerText = user.username;
+      document.getElementById('userScore').innerText = scoreBoard[user.username] || 0;
+      renderSurveyList();
+      renderAdminQuestions();
+    }
+
+    function register() {
+      const u = document.getElementById('username').value;
+      const p = document.getElementById('password').value;
+      if (users.find(x => x.username === u)) return alert('Пользователь существует');
+      users.push({username: u, password: p, role: 'user'});
+      scoreBoard[u] = 0;
+      saveData();
+      alert('Регистрация успешна');
+    }
+
+    function resetPassword() {
+      const u = prompt('Введите имя пользователя для сброса пароля:');
+      const user = users.find(x => x.username === u);
+      if (!user) return alert('Пользователь не найден');
+      const newPass = prompt('Введите новый пароль:');
+      user.password = newPass;
+      saveData();
+      alert('Пароль сброшен');
+    }
+
+    function changePassword() {
+      const newPass = prompt('Введите новый пароль:');
+      if (!newPass) return;
+      currentUser.password = newPass;
+      const u = users.find(u => u.username === currentUser.username);
+      u.password = newPass;
+      saveData();
+      alert('Пароль изменён');
+    }
+
+    function clearProgress() {
+      if (confirm('Вы уверены, что хотите сбросить свои баллы?')) {
+        scoreBoard[currentUser.username] = 0;
+        saveData();
+        document.getElementById('userScore').innerText = 0;
+      }
+    }
+
+    function clearAllQuestions() {
+      if (confirm('Удалить все вопросы?')) {
+        questions = [];
+        saveData();
+        renderAdminQuestions();
+        alert('Все вопросы удалены.');
+      }
+    }
+
+    function resetUsers() {
+      if (confirm('Вы действительно хотите сбросить ВСЕХ пользователей и баллы?')) {
+        users = [];
+        scoreBoard = {};
+        saveData();
+        location.reload();
+      }
+    }
+
+    function logout() { location.reload(); }
+
+    function renderSurveyList() {
+      const list = document.getElementById('surveyList');
+      list.innerHTML = '<h3>📋 Список опросов:</h3>';
+      questions.forEach((q, i) => {
+        const div = document.createElement('div');
+        div.className = 'question-block fade';
+        div.innerHTML = `<strong>${q.text}</strong><br><button onclick="startSurvey(${i})">Пройти</button>`;
+        list.appendChild(div);
+      });
+    }
+
+    function startSurvey(i) {
+      const form = document.getElementById('surveyForm');
+      form.classList.remove('hidden');
+      form.classList.add('fade');
+      const q = questions[i];
+      form.innerHTML = `<h3>${q.text}</h3>`;
+      q.options.forEach(opt => {
+        form.innerHTML += `<label><input type="${q.type === 'multiple' ? 'checkbox' : 'radio'}" name="answer" value="${opt}"> ${opt}</label><br>`;
+      });
+      form.innerHTML += '<button onclick="submitSurvey(event)">Отправить</button>';
+    }
+
+    function submitSurvey(e) {
+      e.preventDefault();
+      document.getElementById('surveyForm').classList.add('hidden');
+      let score = scoreBoard[currentUser.username] || 0;
+      score += 10;
+      scoreBoard[currentUser.username] = score;
+      document.getElementById('userScore').innerText = score;
+      saveData();
+      drawChart();
+    }
+
+    function drawChart() {
+      const ctx = document.getElementById('resultsCanvas').getContext('2d');
+      const data = {
+        labels: Object.keys(scoreBoard),
+        datasets: [{
+          label: 'Баллы пользователей',
+          data: Object.values(scoreBoard),
+          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#AA65CC']
+        }]
+      };
+      new Chart(ctx, {type: 'pie', data});
+      document.getElementById('resultChart').classList.remove('hidden');
+    }
+
+    function showGreeting() {
+      alert(`Привет, ${currentUser.username}! Желаем удачи в прохождении опросов! 🎉`);
+    }
+
+    function toggleAssistant() {
+      const modal = document.getElementById('assistantModal');
+      modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function addSurveyQuestion() {
+      const text = document.getElementById('qText').value;
+      const opts = document.getElementById('qOptions').value.split('\n').map(o => o.trim()).filter(o => o);
+      const type = document.getElementById('qType').value;
+      if (!text || opts.length < 2) return alert('Введите вопрос и минимум 2 варианта');
+      questions.push({text, options: opts, type});
+      saveData();
+      renderAdminQuestions();
+    }
+
+    function renderAdminQuestions() {
+      const adminList = document.getElementById('adminQuestions');
+      if (!adminList) return;
+      adminList.innerHTML = '';
+      questions.forEach((q, i) => {
+        const div = document.createElement('div');
+        div.innerHTML = `<strong>${q.text}</strong> [${q.type}] <button onclick="removeQ(${i})">Удалить</button><hr>`;
+        adminList.appendChild(div);
+      });
+    }
+
+    function removeQ(i) {
+      questions.splice(i, 1);
+      saveData();
+      renderAdminQuestions();
+    }
+
+    function exportQuestions() {
+      const blob = new Blob([JSON.stringify(questions)], {type: 'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'questions.json';
+      a.click();
+    }
+
+    function importQuestions(e) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const imported = JSON.parse(reader.result);
+        questions = imported;
+        saveData();
+        renderAdminQuestions();
+      };
+      reader.readAsText(e.target.files[0]);
+    }
+  </script>
+</body>
+</html>
